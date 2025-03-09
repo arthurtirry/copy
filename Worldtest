@@ -1,0 +1,192 @@
+package ogp.game;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
+
+import java.awt.Color;
+import java.util.ArrayList;
+import java.util.Arrays;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import ogp.util.Point;
+import ogp.util.Rectangle;
+import ogp.util.Vector;
+
+class WorldTest {
+
+
+	
+		private int width;
+		private World world;
+		private int height;
+		private int gravCst;
+		private int maxtimedelta;
+		private Rectangle field;
+		private Player player;
+		private Block[] blocks;
+		private Spaceship ship;
+		private Gem[] gemsonfield;
+		private boolean gravityswitched;
+		private boolean victory;
+		@BeforeEach
+		void initEach() {
+			
+
+			width=7;
+			height=6;
+			gravCst=3;
+			maxtimedelta=2;
+			field=new Rectangle(new Point(0,0),width,height);
+			player=new Player(new Rectangle(new Point(3,4),1,1),new Vector(1,1), new Bag(new Spaceship(null,new ArrayList<>()),new ArrayList<>()), 1,1 );
+			blocks = new Block[]{
+				    new Block(new Rectangle(new Point(1, 1), 1, 1),false),
+				    new Block(new Rectangle(new Point(2, 2), 1, 1),false)
+				};
+			ship=null;
+			gemsonfield = new Gem[]{
+				    new Gem(new Rectangle(new Point(2, 2), 1, 1),Color.BLUE), // Eerste gem op (2,2)
+				    new Gem(new Rectangle(new Point(5, 3), 1, 1),Color.GREEN)  // Tweede gem op (5,3)
+				};
+			gravityswitched=false;
+			victory=false;
+			world = new World(gravCst, maxtimedelta, width, height, player, blocks, null, gemsonfield, field);
+			
+
+			
+			
+			
+		}
+		@Test
+		void testGetWidth() {
+			assertEquals(width,world.getWidth());
+		}
+		@Test
+		void testGetHeight() {
+			assertEquals(height,world.getHeight());
+		}
+		@Test
+		void testGetGravCst() {
+			assertEquals(gravCst,world.getGravCst());
+		}
+		@Test
+		void testMaxTimeDelta() {
+			assertEquals(maxtimedelta,world.getMaxTimeDelta());
+			
+		}
+		@Test
+		void testGetField() {
+			assertEquals(field,world.getField());
+		}
+		@Test
+		void testGetPlayer() {
+		    assertEquals(player.getHitbox(), world.getPlayer().getHitbox());
+		    assertEquals(player.getSpeed(), world.getPlayer().getSpeed());
+		    assertEquals(player.getBag().getUpgrades(), world.getPlayer().getBag().getUpgrades());
+		}///nog aanpassen
+
+		@Test 
+		void testGetPlayerGetRect() {
+			assertEquals(player.getHitbox(),world.getPlayerRect());
+		}
+		@Test
+		void testGetPlayerTL() {
+			assertEquals(player.getHitbox().getTL(),world.getPlayerTopLeft());
+		}
+		@Test
+		void testGetPlayerBL() {
+			assertEquals(player.getPositionBL(),world.getPlayerBotLeft());
+		}
+		@Test 
+		void testGetBlocks() {
+			assertTrue(Arrays.equals(blocks, world.getBlocks()));
+		}
+		@Test
+		void testGetshipOnField() {
+			assertNull(world.getShipOnField());
+		}
+		@Test
+		void testGemsOnField() {
+			assertTrue(Arrays.equals(gemsonfield, world.getGemsOnField()));
+		}
+		@Test
+		void testgetPlayerGetGems() {
+			assertEquals(player.getGems(),world.getPlayerGems());
+		}
+		@Test 
+		void testGetPlayerGetBag() {
+			assertEquals(player.getBag(),world.getPlayerBag());
+		}
+		@Test
+		void testGetGravSwitched() {
+			assertEquals(gravityswitched,world.getGravSwitched());
+		}
+		@Test 
+		void testGetVictory(){
+			assertEquals(victory,world.getVictory());
+		}
+			
+			
+			
+		
+		
+		
+		
+		private Rectangle rec;
+		private ArrayList<Upgrade> up1;
+		private ArrayList<Upgrade> up2;
+	    private Spaceship myShip1;
+	    private Spaceship myShip2;
+		
+		@BeforeEach
+		void initEach() {
+			rec = new Rectangle(new Point(5,5),4,3);
+			up1 = new ArrayList<>(Arrays.asList(Upgrade.HORZDASH, Upgrade.GRAVSWITCH));
+			myShip1 = new Spaceship(rec, up1);
+			up2 = new ArrayList<>();
+			myShip2 = new Spaceship(rec, up2);
+		}
+
+		@Test
+		void testGetHbox() {
+			assertEquals(rec, myShip1.getHbox());
+			assertEquals(rec, myShip2.getHbox());
+		}
+		
+		@Test
+		void testGetUpgrades() {
+			assertEquals(up1, myShip1.getUpgrades());
+			assertEquals(up2, myShip2.getUpgrades());
+		}
+		
+		@Test
+		void testUpgrade() {
+			myShip1.upgrade(Upgrade.DOUBLEJUMP);
+			myShip1.upgrade(Upgrade.GRAVSWITCH);
+			myShip2.upgrade(Upgrade.GRAVSWITCH);
+			assertTrue(myShip1.getUpgrades().contains(Upgrade.DOUBLEJUMP));
+			assertTrue(myShip2.getUpgrades().contains(Upgrade.GRAVSWITCH));
+		}
+		
+		@Test
+		void copy() {
+			Spaceship copiedShip1 = myShip1.copy();
+			assertEquals(myShip1.getHbox(), copiedShip1.getHbox());
+			assertEquals(myShip1.getUpgrades(), copiedShip1.getUpgrades());
+			Spaceship copiedShip2 = myShip1.copy();
+			assertEquals(myShip2.getHbox(), copiedShip2.getHbox());
+			assertEquals(myShip2.getUpgrades(), copiedShip2.getUpgrades());
+		}
+	}
+
+	
+	
+
+	@Test
+	void test() {
+		fail("Not yet implemented");
+	}
+
+}
