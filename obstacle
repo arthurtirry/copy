@@ -1,0 +1,60 @@
+package ogp.game;
+
+import ogp.util.Rectangle;
+import ogp.util.Vector;
+
+/**
+ * @immutable
+ */
+public abstract class Obstacle extends FixedEntity {
+	     /**
+		 * @throws IllegalArgumentException | hitbox == null
+		 */
+		public Obstacle(Rectangle hitbox) {
+			super(hitbox);
+			if (hitbox == null)
+				throw new IllegalArgumentException("Hitbox cannot be null");
+		}
+		
+		/**
+		 * @pre | enemy != null
+		 * @pre | soleCollision == true || soleCollision == false
+		 */
+		@Override
+		public CollisionInfo handleCollisionEnemy(Enemy enemy, boolean soleCollision) {
+			//todo
+			if (soleCollision) {
+				enemy.setHitbox(enemy.getHitbox().plus(enemy.getSpeed().scale(-1)));
+			}
+			return CollisionInfo.NOINFO;
+		}
+		
+		/**
+		 * @pre | player != null
+		 */
+		@Override
+		public CollisionInfo handleCollisionPlayer(Player player) {
+			//todo
+			player.setHitbox(player.getHitbox().plus(player.getSpeed().scale(-1)));
+			return CollisionInfo.NOINFO;
+		}
+
+	
+	
+	@Override
+	public FixedEntity copyFixent() {
+		return this;
+	}
+	@Override
+	public boolean isObstacle() {
+		return true;
+	}
+	@Override
+	public abstract boolean isExternalWall() ;
+	
+	@Override
+	public  boolean isGem() {
+		return false;
+	}
+
+}
