@@ -1,0 +1,47 @@
+package ogp.game;
+
+import ogp.util.Rectangle;
+import ogp.util.Vector;
+
+public abstract class Enemy extends MovingEntity {
+	
+	/**
+	 * @throws IllegalArgumentException | hitbox == null
+	 * @throws IllegalArgumentException | speed == null
+	 * @throws IllegalArgumentException | hspeed < 0
+	 * @throws IllegalArgumentException | vspeed < 0
+	 * 
+	 */
+	public Enemy(Rectangle hitbox, Vector speed, int hspeed, int vspeed) {
+		super(hitbox, speed, hspeed, vspeed);
+		if (hitbox == null) {
+			throw new IllegalArgumentException("Hitbox cannot be null");
+		}
+		if (speed == null) {
+			throw new IllegalArgumentException("Speed cannot be null");
+		}
+		if (hspeed < 0) {
+			throw new IllegalArgumentException("Hspeed cannot be negative");
+		}
+		if (vspeed < 0) {
+			throw new IllegalArgumentException("Vspeed cannot be negative");
+		}
+	}
+	
+	@Override
+
+	public CollisionInfo delegateCollision(FixedEntity fixent, boolean soleCollision) { //dit is fout denk ik
+		return fixent.handleCollisionEnemy(this, soleCollision);
+		
+	
+
+		
+	}
+
+
+		
+	
+
+//	@Override
+//	public int haschCode() {} //ik weet niet of dit moet?
+}
