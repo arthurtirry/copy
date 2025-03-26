@@ -1,50 +1,40 @@
+
 package ogp.game;
 
 import ogp.util.Rectangle;
+
 import ogp.util.Vector;
 import ogp.util.TimeAccumulator;
 import ogp.util.SpecUtil;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.stream.IntStream;
 
 import ogp.util.Point;
 
 
 /**
  * A class that keeps track of everything going on in the game
- *instream nog toevoegen voor elk element.
- * 
- * @invar | getMaxTimeDelta() > 0
- * @invar | getGravCst() > 0
- * @invar | getWidth() > 0 && getHeight() > 0 
- * @invar | getField() !=null
- * @invar | getPlayer() !=null
- * @invar | getPlayerRect()!=null
- * @invar | getPlayerTopLeft()!=null
- * @invar | getPlayerBotLeft()!=null
- * @invar | getBlocks()!=null
- * 
- * @invar | getGemsOnField()!=null
- * @invar | getPlayerGems()!=null
- * @invar | getPlayerBag()!=null
- * @invar ship hitbox within field, if there is a ship
- * 	| getShipOnField() == null || getField().contains(getShipOnField().getHbox())
  * 
  */
 public class World {
 	
 	/**
-	 * see SpecUtil class for helper methods
-	 * 
-	 * 
 	 * @invar | field.getTL().equals(Point.O())
+	 * @invar | field.getWidth() == width
+	 * @invar | field.getHeight() == height
+	 * 
 	 * 
 	 * 
 	 * @invar | maxTimeDelta > 0
 	 * @invar | gravCst > 0
-	 * @invar | width > 0 && height > 0
+	 * @invar | width > 99 && height > 99
 	 * 
+	 * 
+	 * 
+	 * @invar | movingEntities != null
+	 * @invar | movingEntities.size() >= 1
+	 * @invar | movingEntities.get(0) == player
 	 * 
 	 * 
 	 */
@@ -53,27 +43,24 @@ public class World {
 	 * @representationObject
 	 */
 	private Player player;
-	/**
-	 * @representationObject
-	 */
-	private Block[] blocks;
-	/**
-	 * @representationObject
-	 */
-	private Spaceship shipOnField;
-	/**
-	 * @representationObject
-	 */
-	private Gem[] gemsOnField;
 	private final int maxTimeDelta;
 	private final int gravCst;
 	private final int width;
 	private final int height;
-	
 	private boolean gravitySwitched = false;
-	
 	private boolean victory = false;
 	private TimeAccumulator timeAccumulator;
+	/**
+	 * @representationObject
+	 * @representationObjects
+	 */
+	private ArrayList<MovingEntity> movingEntities;
+	/**
+	 * @representationObject
+	 * @representationObjects
+	 * external walls are in there
+	 */
+	private ArrayList<FixedEntity> fixedEntities;
 	
 	public int getWidth() {
 		return width;
@@ -103,32 +90,25 @@ public class World {
 		return player.getHitbox();
 	}
 	
-	public Point getPlayerTopLeft() {
+	public Point getPlayerTopleft() {
 		return player.getHitbox().getTL();
 	}
 	
 	public Point getPlayerBotLeft() {
-		return player.getPositionBL();
+		return player.getHitbox().getBL();
 	}
 	
-	public Block[] getBlocks() {
-		return blocks.clone();
-	}
-	
-	public Spaceship getShipOnField() {
-		return shipOnField.copy();
-	}
-	
-	public Gem[] getGemsOnField() {
-		return gemsOnField.clone();
-	}
 	
 	public ArrayList<Gem> getPlayerGems() {
-		return player.getGems() ;
+		return player.getGems();
 	}
 	
 	public Bag getPlayerBag() {
-		return player.getBag().copy();
+		return player.getBag();
+	}
+	
+	public int getPlayerHp() {
+		return player.getHp();
 	}
 	
 	public boolean getGravSwitched() {
@@ -139,302 +119,386 @@ public class World {
 		return victory;
 	}
 	
-
-    /**
-     * Creates a new game world.
-     * @throws IllegalArgumentException | gravCst <= 0
-     * @throws IllegalArgumentException | maxTimeDelta <= 0
-     * @throws IllegalArgumentException | width <= 0
-     * @throws IllegalArgumentException | height <= 0
-     * @throws IllegalArgumentException | field == null
-     * @throws IllegalArgumentException | player == null
-     * @throws IllegalArgumentException | blocks == null
-     * @throws IllegalArgumentException | gemsOnField == null
-     * @throws IllegalArgumentException | shipOnField != null && !field.contains(shipOnField.getHbox())
-     * @throws IllegalArgumentException | Arrays.stream(blocks).anyMatch(b -> b == null || !field.contains(b.getHbox()))
-     * @throws IllegalArgumentException | Arrays.stream(gemsOnField).anyMatch(g -> g == null || !field.contains(g.getHbox()))
-     * */
-	public World(int gravCst, int maxTimeDelta, int width, int height, Player player, Block[] blocks, Spaceship shipOnField, Gem[] gemsOnField,Rectangle field) {
-		
-		if (gravCst <= 0) { throw new IllegalArgumentException(); }
-		this.gravCst = gravCst;
-		
-		if (width<=0) {throw new IllegalArgumentException();}
-		this.width = width;
-		
-		if (shipOnField != null && shipOnField.getHbox().getBR().getX() > this.width) {
-			throw new IllegalArgumentException();
-		}
-		this.shipOnField = shipOnField == null ? null : shipOnField.copy();
-		
-	
-		if (maxTimeDelta <= 0) { throw new IllegalArgumentException("De tijd is kleiner dan nul"); }
-		this.maxTimeDelta = maxTimeDelta;
-		if (height<=0) {throw new IllegalArgumentException(); }
-		this.height = height;
-		if (field == null) {throw new IllegalArgumentException();}
-		this.field = field;
-		
-		if (player == null) {throw new IllegalArgumentException();}
-		this.player = player;
-		if (Arrays.stream(blocks).anyMatch(b -> b == null || !field.contains(b.getHitbox()))) {
-		    throw new IllegalArgumentException();
-		}
-		this.blocks = blocks;
-		
-		if (Arrays.stream(gemsOnField).anyMatch(g -> g == null || !field.contains(g.getHbox()))) {
-		    throw new IllegalArgumentException();
-		}
-		this.gemsOnField = gemsOnField;
-		
-		timeAccumulator = new TimeAccumulator(); //legit
-		
-		}
-
 	/**
-	 * LEGIT
+	 * post: every returned paintable is within the game field
+	 * 
+	 * informal post (can not formally specify this):
+	 *   order of returned entities is the same internally
+	 *   
+	 * Remember to enforce encapsulation
 	 */
-	public void tick(long elapsedNanoseconds)
-    {
-        timeAccumulator.accumulate(elapsedNanoseconds);
-        
-        while ( timeAccumulator.grab(1000000) )
-        {
-            atomicTick(1);
-        }
-    }
-    
-    /**
-     * @param dt in milliseconds
-     * @pre | dt <= getMaxTimeDelta()
-     */
-    public void atomicTick(int dt) {
-	
-	
-		player.updateSpeedWithGravity(gravCst, dt, gravitySwitched);
-		
-		//move player according to its speed and taking collisions into account
-		Rectangle newHitbox = player.getHitbox().plus(player.getSpeed()); //candidate new hitbox
-		var mbColliderRect = Rectangle.selectCollider(newHitbox, rectangles());
-		
-		if (mbColliderRect.isEmpty()) { //no collisions
-			player.setPosition(newHitbox.getBL());
+	public ArrayList<Paintable> getPaintables() {
+		ArrayList<Paintable> res = new ArrayList<Paintable>();
+		for (var movent : movingEntities) {
+			res.add(movent.copyMovent());
 		}
-		else { //collision
-			Rectangle col = mbColliderRect.get(); //ok get
-			Gem mbGem = findGemWithRect( col );
-			
-			if (shipOnField != null && shipOnField.getHbox().equals(col)) {
-				
-				player.setShip(getShipOnField());
-				shipOnField=null;
-				
-				//player collects ship
-				
-				
-				
+		for (var fixent : fixedEntities) {
+			if (!fixent.isExternalWall()) {
+				res.add(fixent.copyFixent());
 			}
-			else if (mbGem != null) { //player collects gem
-				player.addGemToBag(mbGem);
-				gemsOnField = Arrays.stream(gemsOnField)
-	                    .filter(g -> !g.equals(mbGem)) 
-	                    .toArray(Gem[]::new);
-				player.updateBag();
-				
-				//todo. Player.updateBag useful
+		}
+		return res;
 
-			}
-			else { //bouncing off a wall/block
-				
-				for (var b : blocks) {
-					
-					
-					if (b.isFinish() && b.getHitbox().equals(col)&& gemsOnField.length==0) { 
-						this.victory = true;
-						break;
-					}
-				}
-				
-				Vector newSpeed = Rectangle.speedFromCollision(player.getHitbox(), player.getSpeed(), col);
-				player.setSpeed(newSpeed);
-				Rectangle newHitbox2 = player.getHitbox().plus(player.getSpeed());
-				if (Rectangle.selectCollider(newHitbox2,rectangles()).isEmpty()) { //free to go to newHitbox2
-					player.setPosition(newHitbox2.getBL());
-				}
-			}
-			
-		}
 	}
 	
+
+
+
+	/**
+	 * NOSPEC
+	 * @throws IllegalArgumentException | movingEntities == null || movingEntities.isEmpty()
+	 * @throws IllegalArgumentException | movingEntities.get(0) != player
+	 * 
+	 * 
+	 * @param fixedEntities the list of non moving entities that live inside the game field
+	 * @param the list of moving entities, the first one of which must be player.
+	 */
+	public World(int gravCst, int maxTimeDelta, int width, int height,
+			ArrayList<FixedEntity> fixedEntities, Player player, ArrayList<MovingEntity> movingEntities) {
+		
+		
+		if (fixedEntities == null) { throw new IllegalArgumentException(); }
+		this.fixedEntities = fixedEntities;
+		
+		this.fixedEntities.add(botWall());
+		this.fixedEntities.add(leftWall());
+		this.fixedEntities.add(topWall());
+		this.fixedEntities.add(rightWall());
+
+		if (movingEntities == null) { throw new IllegalArgumentException(); }
+		this.movingEntities = movingEntities;
+		
+		
+		boolean enemyVsObstacleOK;
+		enemyVsObstacleOK = movingEntities.stream().allMatch(movent -> movent.isPlayer() ||
+						    fixedEntities.stream().allMatch(fixent -> !fixent.isObstacle() ||
+						    movent.getHitbox().intersection(fixent.getHitbox()).isEmpty()));
+		if (!enemyVsObstacleOK) {
+			throw new IllegalArgumentException();
+		}
+
+		
+		
+		
+		
+		//todo
+		if (gravCst <= 0 || maxTimeDelta <= 0 || width <= 0 || height <= 0) { throw new IllegalArgumentException(); }
+		this.gravCst = gravCst;
+		this.maxTimeDelta = maxTimeDelta;
+		this.width = width;
+		this.height = height;
+		this.field = new Rectangle(new Point(0,0),width,height);
+		this.gravitySwitched =false ;
+		this.victory = false;
+		this.timeAccumulator = new TimeAccumulator();
+		
+
+		
+		
+		
+
+		
+	}
 	
 	/**
 	 * LEGIT
 	 * 
+	 * old constructor
+	 */
+	public World(int gravCst, int maxTimeDelta, int width, int height, Player player, Block[] blocks, Spaceship ship , Gem[] gems ) {		
+		this(gravCst, maxTimeDelta, width, height, makeFixents(blocks, ship, gems), player, makeMovents(player));
+	}
+	
+	/**
+	 * NOSPEC
 	 * @pre | dir == -1 || dir == 0 || dir == 1
 	 */
 	public void movePlayerHorz(int dir) {
 		
 		player.updateDashingStatus();
 		
-		int x = player.getHspeed() * dir * (player.isDashing() ? 2 : 1);
+		int x = player.getSpeed().x();
 		int y = player.getSpeed().y();
 		player.setSpeed(new Vector(x,y));
 	}
 
 	/**
-	 * Changes the player vertical speed using its jump speed (see Player.getVspeed)
-	 * if the player is slightly above some surface (e.g. bottom wall), or
-	 * below some surface in case gravity is switched
+	 * NOSPEC
+	 * Makes the player jump using its jump speed (see Player.getVspeed),
+	 * if the player is slightly above some surface (e.g. bottom wall),
+	 * or below some surface in case gravity is switched
 	 */
 	public void jumpPlayer() {
 				
 		int x = player.getSpeed().x();
 		int y = (gravitySwitched ? 1 : -1) * player.getVspeed();
 		
-		
-		boolean doubleJumpOk =!playerNearSurface()  && player.updateAndGiveJumpTime()<=250 && player.getShip()!=null && player.getShip().getUpgrades().contains(Upgrade.DOUBLEJUMP);
-; 
-		//todo: double jump feature. Can double jump max 250ms after last jump.
+		boolean doubleJumpOk = false;
+		if (player.getShip() != null && player.getShip().getUpgrades().contains(Upgrade.DOUBLEJUMP)) {
+			long elapsedSinceJump = player.updateAndGiveJumpTime();
+			if (elapsedSinceJump <= 250) {
+				doubleJumpOk = true;
+			}
+		}
 		
 		if (playerNearSurface() || doubleJumpOk) {
 			player.setSpeed(new Vector(x,y));
 		}
 		
 		if (playerNearSurface()) { player.resetJumpTime(); }
-		
 	}
 	
 	/**
+	 * NOSPEC
 	 * @pre | u != null
 	 */
 	public void tryUpgradePlayerShip(Upgrade u) {
 		player.tryUpgradeShip(u);
-		
-
 	}
 	
 	public void trySwitchGravity() {
-		gravitySwitched = player.getShip()!=null && player.getShip().getUpgrades().contains(Upgrade.GRAVSWITCH);
+		Spaceship ship = player.getShip();
+		if (ship!= null && player.getShip().getUpgrades().contains(Upgrade.GRAVSWITCH)) {
+			this.gravitySwitched = this.gravitySwitched? false : true;			
+		}
+		
 	}
 	
 	/**
-	 * has an effect if the dashing upgrade is present
+	 * if the dashing upgrade is present
 	 */
 	public void makePlayerDash() {
-		if (player.getShip()!=null && player.getShip().getUpgrades().contains(Upgrade.HORZDASH))
+		Spaceship ship = player.getShip();
+		if (ship != null && ship.getUpgrades().contains(Upgrade.HORZDASH)) {
 			player.setDashing();
+		}
+	}
+	
+	/** NOSPEC */
+	public void tick(long elapsedNanoseconds)
+	{
+	    timeAccumulator.accumulate(elapsedNanoseconds);
+	    
+	    while ( timeAccumulator.grab(1000000) )
+	    {
+	        atomicTick(1);
+	    }
+	}
+
+	/**
+	 * NOSPEC
+	 * 
+	 * @param dt in ms
+	 * @pre | dt < getMaxTimeDelta()
+	 */
+	public void atomicTick(int dt) {
+		for (var  movent: movingEntities) {
+			//update speed of movent
+			movent.updateSpeedWithGravity(gravCst, dt, gravitySwitched);
+			
+			
+			
+			Rectangle candidate = movent.getHitbox().plus(movent.getSpeed());
+			boolean soleCollision=false;
+			
+			ArrayList<Rectangle> fixedEntityHitboxes = new ArrayList<>();
+			for (var fixent : fixedEntities) { fixedEntityHitboxes.add(fixent.getHitbox()); }
+			
+			int idxCollidee = Rectangle.selectColliderIndex(candidate, fixedEntityHitboxes);
+			int numberofcolliders=Rectangle.numberOfColliders(candidate, fixedEntityHitboxes);
+			if (numberofcolliders>1)
+				 soleCollision=false;
+			if (numberofcolliders==1)
+				 soleCollision=true;
+				
+			
+			if (idxCollidee == -1) { 
+				movent.setPosition(candidate.getBL());
+				//no collision
+				//we only change position here and sometimes in delegateCollision
+			}
+			else {		
+				
+				movent.delegateCollision(fixedEntities.get(idxCollidee),soleCollision);//de rest gebeurt in andere klasses
+				
+				
+				//collision
+				
+				
+				//hint: movent.delegateCollision(fixent)
+				//can use resulting CollisionInfo to take further actions here
+				
+			}
+			
+		}
+		
+		//player vs enemies
+		movingEntityInteractions();
 		
 
 	}
 	
+	/**
+	 * NOSPEC
+	 * Moving entities may interact with each other.
+	 * This method updates their speed vectors accordingly
+	 */
+	private void movingEntityInteractions() {
+		
+		//player vs enemies. If the player is just about to collide an ennemy,
+		//the player jumps (even midair) and loses 1 life.
+		
+		Rectangle candidate = player.getHitbox().plus(player.getSpeed());
+		ArrayList<Rectangle> movingEntityHitboxes=new ArrayList<>();
+		for (var movent2 : movingEntities) { movingEntityHitboxes.add(movent2.getHitbox()); }
+		int idxCollidee = Rectangle.selectColliderIndex(candidate, movingEntityHitboxes);
+		if (idxCollidee==-1)
+			player.setPosition(candidate.getBL());
+		else {
+			player.lose1life();
+			player.setVerticalSpeed(gravitySwitched? -(player.getVspeed()):player.getVspeed());
+
+			
+		}
+		
+		
+			
+			
+		}
+			
+		
+		
+		
+		
 	
+
 	/**
 	 * LEGIT
-	 * 
 	 * if gravity is switched, detects if player is below some surface instead
 	 */
 	private boolean playerNearSurface() {
+		ArrayList<Rectangle> obstacles = new ArrayList<>();
+		for (var fixent : fixedEntities) {
+			if (fixent.isObstacle()) { obstacles.add(fixent.getHitbox()); }
+		}
 		Rectangle pulledHitbox = player.getHitbox().plus(
 				new Vector(0, (gravitySwitched ? -1 : 1) * player.getHitbox().getHeight() / 2));
-		return Rectangle.selectCollider(pulledHitbox, rectangles()).isPresent();
+		return Rectangle.selectCollider(pulledHitbox, obstacles).isPresent();
 	}
 
 	/**
 	 * LEGIT
 	 */
-	private Rectangle botWall() {
+	private ExternalWall botWall() {
 		Point tl = field.getBL();
-		return new Rectangle(tl,width,height/2).tripleHorizontally();
+		return new ExternalWall(new Rectangle(tl,width,height).tripleHorizontally());
+	}
+
+	/**
+	 * LEGIT
+	 */
+	private ExternalWall leftWall() {
+		Point tl = new Point(-width, 0);
+		return new ExternalWall(new Rectangle(tl,width,height).tripleVertically());
 	}
 	
 	/**
 	 * LEGIT
 	 */
-	private Rectangle leftWall() {
-		Point tl = new Point(-width/2, 0);
-		return new Rectangle(tl,width/2,height).tripleVertically();
+	private ExternalWall topWall() {
+		Point tl = new Point(0, -height);
+		return new ExternalWall(new Rectangle(tl, width, height).tripleHorizontally());
 	}
 	
 	/**
 	 * LEGIT
 	 */
-	private Rectangle topWall() {
-		Point tl = new Point(0, -height/2);
-		return new Rectangle(tl, width, height/2).tripleHorizontally();
-	}
-	
-	/**
-	 * LEGIT
-	 */
-	private Rectangle rightWall() {
+	private ExternalWall rightWall() {
 		Point tl = field.getTR();
-		return new Rectangle(tl, width/2 , height).tripleVertically();
+		return new ExternalWall(new Rectangle(tl, width , height).tripleVertically());
 	}
 	
 	/**
 	 * LEGIT
 	 * 
-	 * walls, blocks, gems on field, ship on field if present
-	 * @post | result.size() <= 4 + blocks.length + gemsOnField.length + 1
+	 * adapter method for old constructor
 	 */
-	private ArrayList<Rectangle> rectangles() {
+	public static ArrayList<FixedEntity> makeFixents(Block[] blocks, Spaceship ship, Gem[] gems) {
+		if (blocks == null) { throw new IllegalArgumentException() ; }
+		if (gems == null) { throw new IllegalArgumentException() ; }
 		
-		var res = new ArrayList<Rectangle>();
-		
-		res.add(botWall()); res.add(leftWall()); res.add(topWall()); res.add(rightWall());
-		for (var b : blocks) { res.add(b.getHitbox()); }
-		for (var g : gemsOnField) { res.add(g.getHbox()); }
-		if (shipOnField != null) { res.add(shipOnField.getHbox()); } 
-		
-		return res;
-		
+		ArrayList<FixedEntity> fixents = new ArrayList<>();
+		for (var b : blocks) { fixents.add(b); }
+		if (ship != null) { fixents.add(ship); }
+		for (var g : gems) { fixents.add(g); }
+		return fixents;
 	}
-	
+
 	/**
 	 * LEGIT
 	 * 
-	 * like rectangles but not external walls
-	 * @post | result.size() <= blocks.length + gemsOnField.length + 1
+	 * adapter method for old constructor
 	 */
-	private ArrayList<Rectangle> rectanglesNoWalls() {
-		
-		var res = new ArrayList<Rectangle>();
-		
-		//res.add(botWall()); res.add(leftWall()); res.add(topWall()); res.add(rightWall());
-		for (var b : blocks) { res.add(b.getHitbox()); }
-		for (var g : gemsOnField) { res.add(g.getHbox()); }
-		if (shipOnField != null) { res.add(shipOnField.getHbox()); } 
-		
-		return res;
-		
+	public static ArrayList<MovingEntity> makeMovents(Player player) {
+		ArrayList<MovingEntity> movents = new ArrayList<MovingEntity>();
+		movents.add(player);
+		return movents;
 	}
+	
+	//legit methods for backwards compatibility w.r.t. tests from previous iteration(s)
+	//they can be completely ignored
 	
 	/**
 	 * LEGIT
-	 * 
-	 * Returns all rectangles in the world (player, gems, blocks and ship) but not external walls
-	 * @post | result.size() <= getBlocks().length + getGemsOnField().length + 1
 	 */
-	public ArrayList<Rectangle> rectanglesNoWallsPub() {
-		return rectanglesNoWalls();		
-	}
-	
-	/**
-	 * null if not found
-	 */
-	private Gem findGemWithRect(Rectangle r) {
-		for (Gem g:getGemsOnField()) {
-			if (g.getHbox().equals(r))
-					return g;
-		}
-			
-		return null;
-	}
+	 public Block[] getBlocks() {
+		 int n = (int) fixedEntities.stream().filter(fixent -> fixent instanceof Block).count();
+		 Block[] res = new Block[n];
+		 int i = 0;
+		 for (var fixent : fixedEntities  ) { 
+			 if (fixent instanceof Block)  {
+				 res[i] = ((Block) fixent);
+				 i++;
+			 }
+		 }
+		 return res;
+	 }
 	 
+	 /**
+	  * LEGIT
+	  */
+	 public Spaceship getShipOnField() {
+		 Spaceship res = null;
+		 for (var fixent : fixedEntities) {
+			 if (fixent.isSpaceship()) {
+				 res = ((Spaceship) fixent).copy();
+			 }
+		 }
+		 return res;
+	 }
+	 
+	 /**
+	  * LEGIT
+	  */
+	 public Gem[] getGemsOnField() {
+		 int n = (int) fixedEntities.stream().filter(fixent -> fixent instanceof Gem).count();
+		 Gem[] res = new Gem[n];
+		 int i = 0;
+		 for (var fixent : fixedEntities  ) { 
+			 if (fixent instanceof Gem)  {
+				 res[i] = (Gem) fixent;
+				 i++;
+			 }
+		 }
+		 return res;
+	 }
 	
 	
 	
 	
 }
+
+
+
 
 
